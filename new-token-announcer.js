@@ -1,12 +1,11 @@
 const https = require('https');
 const fs = require('fs');
 
-const WEBHOOK_URL = "https://discord.com/api/webhooks/1517006226259447920/CII_Q70qIBfbGBzeky_B-f-yXInjHeRUXhjA_lwBb7_2G-8zv5PcDxz0j9GlhxW6gPt_"; // GANTI LAGI KALAU PERLU
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1517006226259447920/CII_Q70qIBfbGBzeky_B-f-yXInjHeRUXhjA_lwBb7_2G-8zv5PcDxz0j9GlhxW6gPt_"; // GANTI INI
 
 let knownTokens = new Set();
 const STATE_FILE = 'known-tokens.json';
 
-// Load data token yang sudah pernah diumumkan
 if (fs.existsSync(STATE_FILE)) {
   try {
     const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
@@ -40,7 +39,7 @@ async function sendToDiscord(token) {
       { name: "Game", value: token.game?.name || token.name || "Unknown", inline: true },
       { name: "Price", value: Number(token.stats?.last_price || 0).toFixed(6) + " CROSS", inline: true },
       { name: "Liquidity", value: Number(token.stats?.liquidity || 0).toFixed(2), inline: true },
-      { name: "Contract", value: `\`${token.address ? token.address.substring(0,12) + '...' : 'N/A'}\``, inline: false }
+      { name: "Contract", value: `\`${token.address ? token.address.substring(0,12)+'...' : 'N/A'}\``, inline: false }
     ],
     timestamp: new Date().toISOString(),
     footer: { text: "CROSS GameToken Auto Announcer" }
@@ -61,7 +60,7 @@ async function sendToDiscord(token) {
     };
 
     const req = https.request(options, res => {
-      console.log(`✅ Dikirim: ${token.symbol} | Status: ${res.statusCode}`);
+      console.log(`✅ Dikirim: ${token.symbol}`);
       resolve();
     });
     req.on('error', console.error);
@@ -72,21 +71,22 @@ async function sendToDiscord(token) {
 
 async function main() {
   try {
-    console.log(`[${new Date().toISOString()}] Checking for new tokens...`);
+    console.log(`[${new Date().toISOString()}] Cek token baru...`);
     
     const tokens = await fetchTokens();
     let newCount = 0;
 
+    // Hanya kirim token yang benar-benar baru
     for (const token of tokens) {
       if (token.symbol && !knownTokens.has(token.symbol)) {
-        console.log(`🆕 Token baru ditemukan: ${token.symbol}`);
+        console.log(`🆕 Token baru: ${token.symbol}`);
         await sendToDiscord(token);
         knownTokens.add(token.symbol);
         newCount++;
       }
     }
 
-    // Simpan daftar token yang sudah diumumkan
+    // Simpan state
     fs.writeFileSync(STATE_FILE, JSON.stringify([...knownTokens], null, 2));
     
     console.log(`Selesai. ${newCount} token baru diumumkan.`);
