@@ -1,32 +1,4 @@
-name: CROSS New Token Announcer
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '*/15 * * * *'
-
-jobs:
-  announce:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Run Announcer
-        run: node new-token-announcer.js
-        env:
-          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
-
-      - name: Commit known-tokens.json
-        if: always()
+      - name: Commit & Push known-tokens.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -34,7 +6,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update known-tokens.json - new tokens detected"
+            git commit -m "Update known-tokens.json [auto]"
             git push
           fi
         continue-on-error: true
