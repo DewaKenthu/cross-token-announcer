@@ -1,16 +1,16 @@
 name: CROSS New Token Announcer
 
 on:
-  workflow_dispatch:     # untuk test manual
+  workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'   # tiap 15 menit
+    - cron: '*/15 * * * *'
 
 jobs:
   announce:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -20,16 +20,21 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run Announcer Script
+      - name: Run Announcer
         run: node new-token-announcer.js
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
 
-      - name: Commit updated known-tokens.json
+      - name: Commit known-tokens.json
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add known-tokens.json
-          git diff --staged --quiet || git commit -m "Update known-tokens.json [auto]"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update known-tokens.json - new tokens detected"
+            git push
+          fi
         continue-on-error: true
