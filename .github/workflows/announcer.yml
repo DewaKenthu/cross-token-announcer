@@ -1,10 +1,39 @@
+name: CROSS Token Announcer
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: write   # Ini penting biar bisa commit
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Script
+        run: node new-token-announcer.js
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+
       - name: Commit & Push known-tokens.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add known-tokens.json
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "No new tokens"
           else
             git commit -m "Update known-tokens.json [auto]"
             git push
